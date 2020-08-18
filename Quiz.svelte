@@ -1,14 +1,25 @@
 <script>
   export let quizName = "Jaime's Quizz";
-  let title;
-  let a, b;
+  const correctAnswer = 'A';
+  let result;
+
+  const pickAnswer = answer => {
+    if (answer === correctAnswer) {
+      return (result = 'CORRECT !');
+    }
+    return (result = 'NOOOOOOOO');
+  };
 </script>
 <div>
 	<h2>{quizName}</h2>
-  <h4>{title}</h4>
-  <input bind:value={title} type="text">
-  <input bind:value={a} type="number">
-  <input bind:value={b} type="number">
-  <h4>{a + b}  </h4>
-  
+  {#if result}
+    <h3>{result}</h3>
+  {:else}
+  <h3>Please pick an answer</h3>
+  {/if}
+  <button on:click={() => pickAnswer('A')}>A</button>
+  <button on:click={() => pickAnswer('B')}>B</button>
+  <button on:click={() => pickAnswer('C')}>C</button>
+  <button on:click={() => pickAnswer('D')}>D</button>
+
 </div>
