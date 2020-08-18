@@ -1,7 +1,8 @@
 <script>
   export let quizName = "Jaime's Quizz";
-  const correctAnswer = 'A';
+  const correctAnswer = 'a';
   let result;
+  let answers = ['a', 'b', 'c', 'd'];
 
   const pickAnswer = answer => {
     if (answer === correctAnswer) {
@@ -17,9 +18,8 @@
   {:else}
   <h3>Please pick an answer</h3>
   {/if}
-  <button on:click={() => pickAnswer('A')}>A</button>
-  <button on:click={() => pickAnswer('B')}>B</button>
-  <button on:click={() => pickAnswer('C')}>C</button>
-  <button on:click={() => pickAnswer('D')}>D</button>
 
+  {#each answers as answer}
+  <button on:click={() => pickAnswer(answer)}>{answer.toUpperCase()}</button>
+  {/each}
 </div>
