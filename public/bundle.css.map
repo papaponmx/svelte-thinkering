@@ -1,0 +1,14 @@
+{
+  "version": 3,
+  "file": "bundle.css",
+  "sources": [
+    "../App.svelte",
+    "../Button.svelte"
+  ],
+  "sourcesContent": [
+    "<script>\n  import Button from './Button.svelte';\n  import Quiz from './Quiz.svelte';\n  let name = 'Jaime';\n</script>\n\n<style>\n  main {\n    font-family: sans-serif;\n  }\n</style>\n\n<main>\n\t<Quiz quizName='My quizz' />\n</main>",
+    "<script>\n\tlet count = 0;\n\n\tfunction handleClick() {\n\t\tcount += 1;\n\t}\n</script>\n\n<style>\n\tbutton {\n\t  background: #ff3e00;\n\t  color: white;\n\t  border: none;\n\t  padding: 8px 12px;\n\t  border-radius: 2px;\n\t}\n</style>\n\n<button on:click={handleClick}>\n  Clicked {count} {count === 1 ? 'time' : 'times'}\n</button>"
+  ],
+  "names": [],
+  "mappings": "AAOE,IAAI,cAAC,CAAC,AACJ,WAAW,CAAE,UAAU,AACzB,CAAC;ACAF,MAAM,eAAC,CAAC,AACN,UAAU,CAAE,OAAO,CACnB,KAAK,CAAE,KAAK,CACZ,MAAM,CAAE,IAAI,CACZ,OAAO,CAAE,GAAG,CAAC,IAAI,CACjB,aAAa,CAAE,GAAG,AACpB,CAAC"
+}
