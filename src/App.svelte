@@ -1,5 +1,5 @@
 <script>
-  import Button from './Button.svelte';
+  import Button from '../Button.svelte';
   import Quiz from './Quiz.svelte';
   let name = 'Jaime';
 </script>
