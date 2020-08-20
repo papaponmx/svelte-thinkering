@@ -1,0 +1,12 @@
+{
+  "version": 3,
+  "file": "bundle.css",
+  "sources": [
+    "../../App.svelte"
+  ],
+  "sourcesContent": [
+    "<script>\n  import Quiz from \"./Quiz.svelte\";\n</script>\n\n<style>\n  :global(h4) {\n    color: green;\n  }\n</style>\n\n<h1>Hello World!</h1>\n<h4>I'm an h4!</h4>\n<Quiz quizName=\"New Quiz\" />\n"
+  ],
+  "names": [],
+  "mappings": "AAKU,EAAE,AAAE,CAAC,AACX,KAAK,CAAE,KAAK,AACd,CAAC"
+}

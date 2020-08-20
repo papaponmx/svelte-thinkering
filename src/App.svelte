@@ -1,15 +1,13 @@
 <script>
-  import Button from '../Button.svelte';
-  import Quiz from './Quiz.svelte';
-  let name = 'Jaime';
+  import Quiz from "./Quiz.svelte";
 </script>
 
 <style>
-  main {
-    font-family: sans-serif;
+  :global(h4) {
+    color: green;
   }
 </style>
 
-<main>
-	<Quiz quizName='My quizz' />
-</main>
+<h1>Hello World!</h1>
+<h4>I'm an h4!</h4>
+<Quiz quizName="New Quiz" />
