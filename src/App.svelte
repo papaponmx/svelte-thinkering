@@ -1,5 +1,5 @@
 <script>
-  import Quiz from "./Quiz.svelte";
+  import Quiz from './Quiz.svelte';
 </script>
 
 <style>
@@ -8,6 +8,5 @@
   }
 </style>
 
-<h1>Hello World!</h1>
-<h4>I'm an h4!</h4>
-<Quiz quizName="New Quiz" />
+<h1>Quiz Application</h1>
+<Quiz />

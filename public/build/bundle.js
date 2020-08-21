@@ -827,11 +827,12 @@ var app = (function () {
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[3] = list[i];
+    	child_ctx[5] = list[i];
+    	child_ctx[7] = i;
     	return child_ctx;
     }
 
-    // (1:0) <script>   import Question from "./Question.svelte";    let quiz = getQuiz();    async function getQuiz() {     const res = await fetch(       "https://opentdb.com/api.php?amount=10&category=12&type=multiple"     );     const quiz = await res.json();     return quiz;   }
+    // (1:0) <script>   import Question from './Question.svelte';    let quiz = getQuiz();   let activeQuestion = 0;   let score = 0;   async function getQuiz() {     const res = await fetch(       'https://opentdb.com/api.php?amount=10&category=12&type=multiple',     );     const quiz = await res.json();     return quiz;   }
     function create_catch_block(ctx) {
     	const block = {
     		c: noop,
@@ -846,18 +847,18 @@ var app = (function () {
     		block,
     		id: create_catch_block.name,
     		type: "catch",
-    		source: "(1:0) <script>   import Question from \\\"./Question.svelte\\\";    let quiz = getQuiz();    async function getQuiz() {     const res = await fetch(       \\\"https://opentdb.com/api.php?amount=10&category=12&type=multiple\\\"     );     const quiz = await res.json();     return quiz;   }",
+    		source: "(1:0) <script>   import Question from './Question.svelte';    let quiz = getQuiz();   let activeQuestion = 0;   let score = 0;   async function getQuiz() {     const res = await fetch(       'https://opentdb.com/api.php?amount=10&category=12&type=multiple',     );     const quiz = await res.json();     return quiz;   }",
     		ctx
     	});
 
     	return block;
     }
 
-    // (24:2) {:then data}
+    // (27:2) {:then data}
     function create_then_block(ctx) {
     	let each_1_anchor;
     	let current;
-    	let each_value = /*data*/ ctx[2].results;
+    	let each_value = /*data*/ ctx[4].results;
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -886,8 +887,8 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*quiz*/ 1) {
-    				each_value = /*data*/ ctx[2].results;
+    			if (dirty & /*quiz, activeQuestion*/ 3) {
+    				each_value = /*data*/ ctx[4].results;
     				validate_each_argument(each_value);
     				let i;
 
@@ -942,20 +943,20 @@ var app = (function () {
     		block,
     		id: create_then_block.name,
     		type: "then",
-    		source: "(24:2) {:then data}",
+    		source: "(27:2) {:then data}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (26:4) {#each data.results as question}
-    function create_each_block$1(ctx) {
+    // (30:6) {#if index === activeQuestion}
+    function create_if_block$1(ctx) {
     	let question;
     	let current;
 
     	question = new Question({
-    			props: { question: /*question*/ ctx[3] },
+    			props: { question: /*question*/ ctx[5] },
     			$$inline: true
     		});
 
@@ -969,7 +970,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const question_changes = {};
-    			if (dirty & /*quiz*/ 1) question_changes.question = /*question*/ ctx[3];
+    			if (dirty & /*quiz*/ 1) question_changes.question = /*question*/ ctx[5];
     			question.$set(question_changes);
     		},
     		i: function intro(local) {
@@ -988,16 +989,61 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_each_block$1.name,
-    		type: "each",
-    		source: "(26:4) {#each data.results as question}",
+    		id: create_if_block$1.name,
+    		type: "if",
+    		source: "(30:6) {#if index === activeQuestion}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (22:15)      Loading....   {:then data}
+    // (29:4) {#each data.results as question, index}
+    function create_each_block$1(ctx) {
+    	let if_block_anchor;
+    	let current;
+    	let if_block = /*index*/ ctx[7] === /*activeQuestion*/ ctx[1] && create_if_block$1(ctx);
+
+    	const block = {
+    		c: function create() {
+    			if (if_block) if_block.c();
+    			if_block_anchor = empty();
+    		},
+    		m: function mount(target, anchor) {
+    			if (if_block) if_block.m(target, anchor);
+    			insert_dev(target, if_block_anchor, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			if (/*index*/ ctx[7] === /*activeQuestion*/ ctx[1]) if_block.p(ctx, dirty);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(if_block);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(if_block);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			if (if_block) if_block.d(detaching);
+    			if (detaching) detach_dev(if_block_anchor);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_each_block$1.name,
+    		type: "each",
+    		source: "(29:4) {#each data.results as question, index}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (25:15)      Loading....   {:then data}
     function create_pending_block(ctx) {
     	let t;
 
@@ -1020,7 +1066,7 @@ var app = (function () {
     		block,
     		id: create_pending_block.name,
     		type: "pending",
-    		source: "(22:15)      Loading....   {:then data}",
+    		source: "(25:15)      Loading....   {:then data}",
     		ctx
     	});
 
@@ -1031,6 +1077,10 @@ var app = (function () {
     	let div;
     	let button;
     	let t1;
+    	let h30;
+    	let t4;
+    	let h31;
+    	let t7;
     	let promise;
     	let current;
     	let mounted;
@@ -1043,7 +1093,7 @@ var app = (function () {
     		pending: create_pending_block,
     		then: create_then_block,
     		catch: create_catch_block,
-    		value: 2,
+    		value: 4,
     		blocks: [,,,]
     	};
 
@@ -1053,11 +1103,19 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			button = element("button");
-    			button.textContent = "Get New Questions";
+    			button.textContent = "Start New Quiz";
     			t1 = space();
+    			h30 = element("h3");
+    			h30.textContent = `My Score: ${/*score*/ ctx[2]}`;
+    			t4 = space();
+    			h31 = element("h3");
+    			h31.textContent = `Question # ${/*activeQuestion*/ ctx[1] + 1}`;
+    			t7 = space();
     			info.block.c();
-    			add_location(button, file$1, 19, 2, 345);
-    			add_location(div, file$1, 18, 0, 337);
+    			add_location(button, file$1, 20, 2, 388);
+    			add_location(h30, file$1, 22, 2, 446);
+    			add_location(h31, file$1, 23, 2, 475);
+    			add_location(div, file$1, 19, 0, 380);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1066,13 +1124,17 @@ var app = (function () {
     			insert_dev(target, div, anchor);
     			append_dev(div, button);
     			append_dev(div, t1);
+    			append_dev(div, h30);
+    			append_dev(div, t4);
+    			append_dev(div, h31);
+    			append_dev(div, t7);
     			info.block.m(div, info.anchor = null);
     			info.mount = () => div;
     			info.anchor = null;
     			current = true;
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*handleClick*/ ctx[1], false, false, false);
+    				dispose = listen_dev(button, "click", /*handleClick*/ ctx[3], false, false, false);
     				mounted = true;
     			}
     		},
@@ -1082,7 +1144,7 @@ var app = (function () {
 
     			if (dirty & /*quiz*/ 1 && promise !== (promise = /*quiz*/ ctx[0]) && handle_promise(promise, info)) ; else {
     				const child_ctx = ctx.slice();
-    				child_ctx[2] = info.resolved;
+    				child_ctx[4] = info.resolved;
     				info.block.p(child_ctx, dirty);
     			}
     		},
@@ -1128,6 +1190,8 @@ var app = (function () {
 
     function instance$1($$self, $$props, $$invalidate) {
     	let quiz = getQuiz();
+    	let activeQuestion = 0;
+    	let score = 0;
 
     	function handleClick() {
     		$$invalidate(0, quiz = getQuiz());
@@ -1141,17 +1205,27 @@ var app = (function () {
 
     	let { $$slots = {}, $$scope } = $$props;
     	validate_slots("Quiz", $$slots, []);
-    	$$self.$capture_state = () => ({ Question, quiz, getQuiz, handleClick });
+
+    	$$self.$capture_state = () => ({
+    		Question,
+    		quiz,
+    		activeQuestion,
+    		score,
+    		getQuiz,
+    		handleClick
+    	});
 
     	$$self.$inject_state = $$props => {
     		if ("quiz" in $$props) $$invalidate(0, quiz = $$props.quiz);
+    		if ("activeQuestion" in $$props) $$invalidate(1, activeQuestion = $$props.activeQuestion);
+    		if ("score" in $$props) $$invalidate(2, score = $$props.score);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [quiz, handleClick];
+    	return [quiz, activeQuestion, score, handleClick];
     }
 
     class Quiz extends SvelteComponentDev {
@@ -1174,27 +1248,17 @@ var app = (function () {
     function create_fragment$2(ctx) {
     	let h1;
     	let t1;
-    	let h4;
-    	let t3;
     	let quiz;
     	let current;
-
-    	quiz = new Quiz({
-    			props: { quizName: "New Quiz" },
-    			$$inline: true
-    		});
+    	quiz = new Quiz({ $$inline: true });
 
     	const block = {
     		c: function create() {
     			h1 = element("h1");
-    			h1.textContent = "Hello World!";
+    			h1.textContent = "Quiz Application";
     			t1 = space();
-    			h4 = element("h4");
-    			h4.textContent = "I'm an h4!";
-    			t3 = space();
     			create_component(quiz.$$.fragment);
     			add_location(h1, file$2, 10, 0, 112);
-    			add_location(h4, file$2, 11, 0, 134);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1202,8 +1266,6 @@ var app = (function () {
     		m: function mount(target, anchor) {
     			insert_dev(target, h1, anchor);
     			insert_dev(target, t1, anchor);
-    			insert_dev(target, h4, anchor);
-    			insert_dev(target, t3, anchor);
     			mount_component(quiz, target, anchor);
     			current = true;
     		},
@@ -1220,8 +1282,6 @@ var app = (function () {
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(h1);
     			if (detaching) detach_dev(t1);
-    			if (detaching) detach_dev(h4);
-    			if (detaching) detach_dev(t3);
     			destroy_component(quiz, detaching);
     		}
     	};
