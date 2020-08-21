@@ -19,10 +19,19 @@
   function nextQuestion() {
     ++activeQuestion;
   }
+
+  const resetQuiz = () => {
+    score = 0;
+    quiz = getQuiz();
+  };
+
+  const addToScore = () => {
+    ++score;
+  };
 </script>
 
 <div>
-  <button on:click={handleClick}>Start New Quiz</button>
+  <button on:click={resetQuiz}>Start New Quiz</button>
 
   <h3>My Score: {score}</h3>
   <h3>Question # {activeQuestion + 1}</h3>
@@ -32,7 +41,7 @@
 
     {#each data.results as question, index}
       {#if index === activeQuestion}
-        <Question {nextQuestion} {question} />
+        <Question {addToScore} {nextQuestion} {question} />
       {/if}
     {/each}
 

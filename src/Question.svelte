@@ -1,4 +1,5 @@
 <script>
+  export let addToScore;
   export let nextQuestion;
   export let question;
   let isCorrect;
@@ -23,6 +24,7 @@
   const checkQuestion = (correct) => {
     isAnswered = true;
     isCorrect = correct;
+    correct && addToScore();
   };
 
   shuffle(allAnswers);
@@ -43,4 +45,6 @@
     {@html answer.answer}
   </button>
 {/each}
-<button on:click={nextQuestion}>Next Question</button>
+{#if isAnswered}
+  <button on:click={nextQuestion}>Next Question</button>
+{/if}
