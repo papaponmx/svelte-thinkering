@@ -466,32 +466,151 @@ var app = (function () {
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[2] = list[i];
+    	child_ctx[8] = list[i];
     	return child_ctx;
     }
 
-    // (11:0) {#each answers as answer}
+    // (34:0) {#if isAnswered}
+    function create_if_block(ctx) {
+    	let h4;
+
+    	function select_block_type(ctx, dirty) {
+    		if (/*isCorrect*/ ctx[1]) return create_if_block_1;
+    		return create_else_block;
+    	}
+
+    	let current_block_type = select_block_type(ctx);
+    	let if_block = current_block_type(ctx);
+
+    	const block = {
+    		c: function create() {
+    			h4 = element("h4");
+    			if_block.c();
+    			add_location(h4, file, 34, 2, 563);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, h4, anchor);
+    			if_block.m(h4, null);
+    		},
+    		p: function update(ctx, dirty) {
+    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    				if_block.d(1);
+    				if_block = current_block_type(ctx);
+
+    				if (if_block) {
+    					if_block.c();
+    					if_block.m(h4, null);
+    				}
+    			}
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(h4);
+    			if_block.d();
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block.name,
+    		type: "if",
+    		source: "(34:0) {#if isAnswered}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (36:35) {:else}
+    function create_else_block(ctx) {
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			t = text("You goofed up");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_else_block.name,
+    		type: "else",
+    		source: "(36:35) {:else}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (36:4) {#if isCorrect}
+    function create_if_block_1(ctx) {
+    	let t;
+
+    	const block = {
+    		c: function create() {
+    			t = text("You got it right");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, t, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(t);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block_1.name,
+    		type: "if",
+    		source: "(36:4) {#if isCorrect}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (40:0) {#each allAnswers as answer}
     function create_each_block(ctx) {
     	let button;
     	let html_tag;
-    	let raw_value = /*answer*/ ctx[2] + "";
+    	let raw_value = /*answer*/ ctx[8].answer + "";
     	let t;
+    	let mounted;
+    	let dispose;
+
+    	function click_handler(...args) {
+    		return /*click_handler*/ ctx[5](/*answer*/ ctx[8], ...args);
+    	}
 
     	const block = {
     		c: function create() {
     			button = element("button");
     			t = space();
     			html_tag = new HtmlTag(t);
-    			add_location(button, file, 11, 2, 156);
+    			add_location(button, file, 40, 2, 675);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
     			html_tag.m(raw_value, button);
     			append_dev(button, t);
+
+    			if (!mounted) {
+    				dispose = listen_dev(button, "click", click_handler, false, false, false);
+    				mounted = true;
+    			}
     		},
-    		p: noop,
+    		p: function update(new_ctx, dirty) {
+    			ctx = new_ctx;
+    		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(button);
+    			mounted = false;
+    			dispose();
     		}
     	};
 
@@ -499,7 +618,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(11:0) {#each answers as answer}",
+    		source: "(40:0) {#each allAnswers as answer}",
     		ctx
     	});
 
@@ -509,9 +628,11 @@ var app = (function () {
     function create_fragment(ctx) {
     	let h3;
     	let raw_value = /*question*/ ctx[0].question + "";
-    	let t;
+    	let t0;
+    	let t1;
     	let each_1_anchor;
-    	let each_value = /*answers*/ ctx[1];
+    	let if_block = /*isAnswered*/ ctx[2] && create_if_block(ctx);
+    	let each_value = /*allAnswers*/ ctx[3];
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -522,14 +643,16 @@ var app = (function () {
     	const block = {
     		c: function create() {
     			h3 = element("h3");
-    			t = space();
+    			t0 = space();
+    			if (if_block) if_block.c();
+    			t1 = space();
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
     				each_blocks[i].c();
     			}
 
     			each_1_anchor = empty();
-    			add_location(h3, file, 6, 0, 88);
+    			add_location(h3, file, 29, 0, 504);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -537,7 +660,9 @@ var app = (function () {
     		m: function mount(target, anchor) {
     			insert_dev(target, h3, anchor);
     			h3.innerHTML = raw_value;
-    			insert_dev(target, t, anchor);
+    			insert_dev(target, t0, anchor);
+    			if (if_block) if_block.m(target, anchor);
+    			insert_dev(target, t1, anchor);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
     				each_blocks[i].m(target, anchor);
@@ -547,8 +672,21 @@ var app = (function () {
     		},
     		p: function update(ctx, [dirty]) {
     			if (dirty & /*question*/ 1 && raw_value !== (raw_value = /*question*/ ctx[0].question + "")) h3.innerHTML = raw_value;
-    			if (dirty & /*answers*/ 2) {
-    				each_value = /*answers*/ ctx[1];
+    			if (/*isAnswered*/ ctx[2]) {
+    				if (if_block) {
+    					if_block.p(ctx, dirty);
+    				} else {
+    					if_block = create_if_block(ctx);
+    					if_block.c();
+    					if_block.m(t1.parentNode, t1);
+    				}
+    			} else if (if_block) {
+    				if_block.d(1);
+    				if_block = null;
+    			}
+
+    			if (dirty & /*checkQuestion, allAnswers*/ 24) {
+    				each_value = /*allAnswers*/ ctx[3];
     				validate_each_argument(each_value);
     				let i;
 
@@ -575,7 +713,9 @@ var app = (function () {
     		o: noop,
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(h3);
-    			if (detaching) detach_dev(t);
+    			if (detaching) detach_dev(t0);
+    			if (if_block) if_block.d(detaching);
+    			if (detaching) detach_dev(t1);
     			destroy_each(each_blocks, detaching);
     			if (detaching) detach_dev(each_1_anchor);
     		}
@@ -594,7 +734,28 @@ var app = (function () {
 
     function instance($$self, $$props, $$invalidate) {
     	let { question } = $$props;
-    	let answers = question.incorrect_answers;
+    	let isCorrect;
+    	let isAnswered = false;
+    	const answers = question.incorrect_answers.map(answer => ({ answer, correct: false }));
+
+    	const allAnswers = [
+    		...answers,
+    		{
+    			answer: question.correct_answer,
+    			correct: true
+    		}
+    	];
+
+    	const shuffle = array => {
+    		array.sort(() => Math.random() - 0.5);
+    	};
+
+    	const checkQuestion = correct => {
+    		$$invalidate(2, isAnswered = true);
+    		$$invalidate(1, isCorrect = correct);
+    	};
+
+    	shuffle(allAnswers);
     	const writable_props = ["question"];
 
     	Object.keys($$props).forEach(key => {
@@ -603,23 +764,33 @@ var app = (function () {
 
     	let { $$slots = {}, $$scope } = $$props;
     	validate_slots("Question", $$slots, []);
+    	const click_handler = answer => checkQuestion(answer.correct);
 
     	$$self.$$set = $$props => {
     		if ("question" in $$props) $$invalidate(0, question = $$props.question);
     	};
 
-    	$$self.$capture_state = () => ({ question, answers });
+    	$$self.$capture_state = () => ({
+    		question,
+    		isCorrect,
+    		isAnswered,
+    		answers,
+    		allAnswers,
+    		shuffle,
+    		checkQuestion
+    	});
 
     	$$self.$inject_state = $$props => {
     		if ("question" in $$props) $$invalidate(0, question = $$props.question);
-    		if ("answers" in $$props) $$invalidate(1, answers = $$props.answers);
+    		if ("isCorrect" in $$props) $$invalidate(1, isCorrect = $$props.isCorrect);
+    		if ("isAnswered" in $$props) $$invalidate(2, isAnswered = $$props.isAnswered);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [question, answers];
+    	return [question, isCorrect, isAnswered, allAnswers, checkQuestion, click_handler];
     }
 
     class Question extends SvelteComponentDev {
