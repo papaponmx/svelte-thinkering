@@ -1,4 +1,5 @@
 <script>
+  export let nextQuestion;
   export let question;
   let isCorrect;
   let isAnswered = false;
@@ -42,3 +43,4 @@
     {@html answer.answer}
   </button>
 {/each}
+<button on:click={nextQuestion}>Next Question</button>

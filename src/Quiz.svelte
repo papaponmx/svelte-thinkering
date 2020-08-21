@@ -15,6 +15,10 @@
   function handleClick() {
     quiz = getQuiz();
   }
+
+  function nextQuestion() {
+    ++activeQuestion;
+  }
 </script>
 
 <div>
@@ -28,7 +32,7 @@
 
     {#each data.results as question, index}
       {#if index === activeQuestion}
-        <Question {question} />
+        <Question {nextQuestion} {question} />
       {/if}
     {/each}
 

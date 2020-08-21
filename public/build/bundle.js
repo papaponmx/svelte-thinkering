@@ -70,37 +70,6 @@ var app = (function () {
         e.initCustomEvent(type, false, false, detail);
         return e;
     }
-    class HtmlTag {
-        constructor(anchor = null) {
-            this.a = anchor;
-            this.e = this.n = null;
-        }
-        m(html, target, anchor = null) {
-            if (!this.e) {
-                this.e = element(target.nodeName);
-                this.t = target;
-                this.h(html);
-            }
-            this.i(anchor);
-        }
-        h(html) {
-            this.e.innerHTML = html;
-            this.n = Array.from(this.e.childNodes);
-        }
-        i(anchor) {
-            for (let i = 0; i < this.n.length; i += 1) {
-                insert(this.t, this.n[i], anchor);
-            }
-        }
-        p(html) {
-            this.d();
-            this.h(html);
-            this.i(this.a);
-        }
-        d() {
-            this.n.forEach(detach);
-        }
-    }
 
     let current_component;
     function set_current_component(component) {
@@ -427,6 +396,13 @@ var app = (function () {
             dispose();
         };
     }
+    function set_data_dev(text, data) {
+        data = '' + data;
+        if (text.wholeText === data)
+            return;
+        dispatch_dev("SvelteDOMSetData", { node: text, data });
+        text.data = data;
+    }
     function validate_each_argument(arg) {
         if (typeof arg !== 'string' && !(arg && typeof arg === 'object' && 'length' in arg)) {
             let msg = '{#each} only iterates over array-like objects.';
@@ -466,16 +442,16 @@ var app = (function () {
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[8] = list[i];
+    	child_ctx[9] = list[i];
     	return child_ctx;
     }
 
-    // (34:0) {#if isAnswered}
+    // (35:0) {#if isAnswered}
     function create_if_block(ctx) {
     	let h4;
 
     	function select_block_type(ctx, dirty) {
-    		if (/*isCorrect*/ ctx[1]) return create_if_block_1;
+    		if (/*isCorrect*/ ctx[2]) return create_if_block_1;
     		return create_else_block;
     	}
 
@@ -486,7 +462,7 @@ var app = (function () {
     		c: function create() {
     			h4 = element("h4");
     			if_block.c();
-    			add_location(h4, file, 34, 2, 563);
+    			add_location(h4, file, 35, 2, 590);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, h4, anchor);
@@ -513,14 +489,14 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(34:0) {#if isAnswered}",
+    		source: "(35:0) {#if isAnswered}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (36:35) {:else}
+    // (37:35) {:else}
     function create_else_block(ctx) {
     	let t;
 
@@ -540,14 +516,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(36:35) {:else}",
+    		source: "(37:35) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (36:4) {#if isCorrect}
+    // (37:4) {#if isCorrect}
     function create_if_block_1(ctx) {
     	let t;
 
@@ -567,37 +543,32 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(36:4) {#if isCorrect}",
+    		source: "(37:4) {#if isCorrect}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (40:0) {#each allAnswers as answer}
+    // (41:0) {#each allAnswers as answer}
     function create_each_block(ctx) {
     	let button;
-    	let html_tag;
-    	let raw_value = /*answer*/ ctx[8].answer + "";
-    	let t;
+    	let raw_value = /*answer*/ ctx[9].answer + "";
     	let mounted;
     	let dispose;
 
     	function click_handler(...args) {
-    		return /*click_handler*/ ctx[5](/*answer*/ ctx[8], ...args);
+    		return /*click_handler*/ ctx[6](/*answer*/ ctx[9], ...args);
     	}
 
     	const block = {
     		c: function create() {
     			button = element("button");
-    			t = space();
-    			html_tag = new HtmlTag(t);
-    			add_location(button, file, 40, 2, 675);
+    			add_location(button, file, 41, 2, 702);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
-    			html_tag.m(raw_value, button);
-    			append_dev(button, t);
+    			button.innerHTML = raw_value;
 
     			if (!mounted) {
     				dispose = listen_dev(button, "click", click_handler, false, false, false);
@@ -618,7 +589,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(40:0) {#each allAnswers as answer}",
+    		source: "(41:0) {#each allAnswers as answer}",
     		ctx
     	});
 
@@ -627,12 +598,15 @@ var app = (function () {
 
     function create_fragment(ctx) {
     	let h3;
-    	let raw_value = /*question*/ ctx[0].question + "";
+    	let raw_value = /*question*/ ctx[1].question + "";
     	let t0;
     	let t1;
-    	let each_1_anchor;
-    	let if_block = /*isAnswered*/ ctx[2] && create_if_block(ctx);
-    	let each_value = /*allAnswers*/ ctx[3];
+    	let t2;
+    	let button;
+    	let mounted;
+    	let dispose;
+    	let if_block = /*isAnswered*/ ctx[3] && create_if_block(ctx);
+    	let each_value = /*allAnswers*/ ctx[4];
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -651,8 +625,11 @@ var app = (function () {
     				each_blocks[i].c();
     			}
 
-    			each_1_anchor = empty();
-    			add_location(h3, file, 29, 0, 504);
+    			t2 = space();
+    			button = element("button");
+    			button.textContent = "Next Question";
+    			add_location(h3, file, 30, 0, 531);
+    			add_location(button, file, 45, 0, 804);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -668,11 +645,28 @@ var app = (function () {
     				each_blocks[i].m(target, anchor);
     			}
 
-    			insert_dev(target, each_1_anchor, anchor);
+    			insert_dev(target, t2, anchor);
+    			insert_dev(target, button, anchor);
+
+    			if (!mounted) {
+    				dispose = listen_dev(
+    					button,
+    					"click",
+    					function () {
+    						if (is_function(/*nextQuestion*/ ctx[0])) /*nextQuestion*/ ctx[0].apply(this, arguments);
+    					},
+    					false,
+    					false,
+    					false
+    				);
+
+    				mounted = true;
+    			}
     		},
-    		p: function update(ctx, [dirty]) {
-    			if (dirty & /*question*/ 1 && raw_value !== (raw_value = /*question*/ ctx[0].question + "")) h3.innerHTML = raw_value;
-    			if (/*isAnswered*/ ctx[2]) {
+    		p: function update(new_ctx, [dirty]) {
+    			ctx = new_ctx;
+    			if (dirty & /*question*/ 2 && raw_value !== (raw_value = /*question*/ ctx[1].question + "")) h3.innerHTML = raw_value;
+    			if (/*isAnswered*/ ctx[3]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
@@ -685,8 +679,8 @@ var app = (function () {
     				if_block = null;
     			}
 
-    			if (dirty & /*checkQuestion, allAnswers*/ 24) {
-    				each_value = /*allAnswers*/ ctx[3];
+    			if (dirty & /*checkQuestion, allAnswers*/ 48) {
+    				each_value = /*allAnswers*/ ctx[4];
     				validate_each_argument(each_value);
     				let i;
 
@@ -698,7 +692,7 @@ var app = (function () {
     					} else {
     						each_blocks[i] = create_each_block(child_ctx);
     						each_blocks[i].c();
-    						each_blocks[i].m(each_1_anchor.parentNode, each_1_anchor);
+    						each_blocks[i].m(t2.parentNode, t2);
     					}
     				}
 
@@ -717,7 +711,10 @@ var app = (function () {
     			if (if_block) if_block.d(detaching);
     			if (detaching) detach_dev(t1);
     			destroy_each(each_blocks, detaching);
-    			if (detaching) detach_dev(each_1_anchor);
+    			if (detaching) detach_dev(t2);
+    			if (detaching) detach_dev(button);
+    			mounted = false;
+    			dispose();
     		}
     	};
 
@@ -733,6 +730,7 @@ var app = (function () {
     }
 
     function instance($$self, $$props, $$invalidate) {
+    	let { nextQuestion } = $$props;
     	let { question } = $$props;
     	let isCorrect;
     	let isAnswered = false;
@@ -751,12 +749,12 @@ var app = (function () {
     	};
 
     	const checkQuestion = correct => {
-    		$$invalidate(2, isAnswered = true);
-    		$$invalidate(1, isCorrect = correct);
+    		$$invalidate(3, isAnswered = true);
+    		$$invalidate(2, isCorrect = correct);
     	};
 
     	shuffle(allAnswers);
-    	const writable_props = ["question"];
+    	const writable_props = ["nextQuestion", "question"];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<Question> was created with unknown prop '${key}'`);
@@ -767,10 +765,12 @@ var app = (function () {
     	const click_handler = answer => checkQuestion(answer.correct);
 
     	$$self.$$set = $$props => {
-    		if ("question" in $$props) $$invalidate(0, question = $$props.question);
+    		if ("nextQuestion" in $$props) $$invalidate(0, nextQuestion = $$props.nextQuestion);
+    		if ("question" in $$props) $$invalidate(1, question = $$props.question);
     	};
 
     	$$self.$capture_state = () => ({
+    		nextQuestion,
     		question,
     		isCorrect,
     		isAnswered,
@@ -781,22 +781,31 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("question" in $$props) $$invalidate(0, question = $$props.question);
-    		if ("isCorrect" in $$props) $$invalidate(1, isCorrect = $$props.isCorrect);
-    		if ("isAnswered" in $$props) $$invalidate(2, isAnswered = $$props.isAnswered);
+    		if ("nextQuestion" in $$props) $$invalidate(0, nextQuestion = $$props.nextQuestion);
+    		if ("question" in $$props) $$invalidate(1, question = $$props.question);
+    		if ("isCorrect" in $$props) $$invalidate(2, isCorrect = $$props.isCorrect);
+    		if ("isAnswered" in $$props) $$invalidate(3, isAnswered = $$props.isAnswered);
     	};
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [question, isCorrect, isAnswered, allAnswers, checkQuestion, click_handler];
+    	return [
+    		nextQuestion,
+    		question,
+    		isCorrect,
+    		isAnswered,
+    		allAnswers,
+    		checkQuestion,
+    		click_handler
+    	];
     }
 
     class Question extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance, create_fragment, safe_not_equal, { question: 0 });
+    		init(this, options, instance, create_fragment, safe_not_equal, { nextQuestion: 0, question: 1 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -808,9 +817,21 @@ var app = (function () {
     		const { ctx } = this.$$;
     		const props = options.props || {};
 
-    		if (/*question*/ ctx[0] === undefined && !("question" in props)) {
+    		if (/*nextQuestion*/ ctx[0] === undefined && !("nextQuestion" in props)) {
+    			console.warn("<Question> was created without expected prop 'nextQuestion'");
+    		}
+
+    		if (/*question*/ ctx[1] === undefined && !("question" in props)) {
     			console.warn("<Question> was created without expected prop 'question'");
     		}
+    	}
+
+    	get nextQuestion() {
+    		throw new Error("<Question>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set nextQuestion(value) {
+    		throw new Error("<Question>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
 
     	get question() {
@@ -827,8 +848,8 @@ var app = (function () {
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[5] = list[i];
-    	child_ctx[7] = i;
+    	child_ctx[6] = list[i];
+    	child_ctx[8] = i;
     	return child_ctx;
     }
 
@@ -854,11 +875,11 @@ var app = (function () {
     	return block;
     }
 
-    // (27:2) {:then data}
+    // (31:2) {:then data}
     function create_then_block(ctx) {
     	let each_1_anchor;
     	let current;
-    	let each_value = /*data*/ ctx[4].results;
+    	let each_value = /*data*/ ctx[5].results;
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -887,8 +908,8 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*quiz, activeQuestion*/ 3) {
-    				each_value = /*data*/ ctx[4].results;
+    			if (dirty & /*nextQuestion, quiz, activeQuestion*/ 19) {
+    				each_value = /*data*/ ctx[5].results;
     				validate_each_argument(each_value);
     				let i;
 
@@ -943,20 +964,23 @@ var app = (function () {
     		block,
     		id: create_then_block.name,
     		type: "then",
-    		source: "(27:2) {:then data}",
+    		source: "(31:2) {:then data}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (30:6) {#if index === activeQuestion}
+    // (34:6) {#if index === activeQuestion}
     function create_if_block$1(ctx) {
     	let question;
     	let current;
 
     	question = new Question({
-    			props: { question: /*question*/ ctx[5] },
+    			props: {
+    				nextQuestion: /*nextQuestion*/ ctx[4],
+    				question: /*question*/ ctx[6]
+    			},
     			$$inline: true
     		});
 
@@ -970,7 +994,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const question_changes = {};
-    			if (dirty & /*quiz*/ 1) question_changes.question = /*question*/ ctx[5];
+    			if (dirty & /*quiz*/ 1) question_changes.question = /*question*/ ctx[6];
     			question.$set(question_changes);
     		},
     		i: function intro(local) {
@@ -991,18 +1015,18 @@ var app = (function () {
     		block,
     		id: create_if_block$1.name,
     		type: "if",
-    		source: "(30:6) {#if index === activeQuestion}",
+    		source: "(34:6) {#if index === activeQuestion}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (29:4) {#each data.results as question, index}
+    // (33:4) {#each data.results as question, index}
     function create_each_block$1(ctx) {
     	let if_block_anchor;
     	let current;
-    	let if_block = /*index*/ ctx[7] === /*activeQuestion*/ ctx[1] && create_if_block$1(ctx);
+    	let if_block = /*index*/ ctx[8] === /*activeQuestion*/ ctx[1] && create_if_block$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -1015,7 +1039,28 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (/*index*/ ctx[7] === /*activeQuestion*/ ctx[1]) if_block.p(ctx, dirty);
+    			if (/*index*/ ctx[8] === /*activeQuestion*/ ctx[1]) {
+    				if (if_block) {
+    					if_block.p(ctx, dirty);
+
+    					if (dirty & /*activeQuestion*/ 2) {
+    						transition_in(if_block, 1);
+    					}
+    				} else {
+    					if_block = create_if_block$1(ctx);
+    					if_block.c();
+    					transition_in(if_block, 1);
+    					if_block.m(if_block_anchor.parentNode, if_block_anchor);
+    				}
+    			} else if (if_block) {
+    				group_outros();
+
+    				transition_out(if_block, 1, 1, () => {
+    					if_block = null;
+    				});
+
+    				check_outros();
+    			}
     		},
     		i: function intro(local) {
     			if (current) return;
@@ -1036,14 +1081,14 @@ var app = (function () {
     		block,
     		id: create_each_block$1.name,
     		type: "each",
-    		source: "(29:4) {#each data.results as question, index}",
+    		source: "(33:4) {#each data.results as question, index}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (25:15)      Loading....   {:then data}
+    // (29:15)      Loading....   {:then data}
     function create_pending_block(ctx) {
     	let t;
 
@@ -1066,7 +1111,7 @@ var app = (function () {
     		block,
     		id: create_pending_block.name,
     		type: "pending",
-    		source: "(25:15)      Loading....   {:then data}",
+    		source: "(29:15)      Loading....   {:then data}",
     		ctx
     	});
 
@@ -1080,6 +1125,9 @@ var app = (function () {
     	let h30;
     	let t4;
     	let h31;
+    	let t5;
+    	let t6_value = /*activeQuestion*/ ctx[1] + 1 + "";
+    	let t6;
     	let t7;
     	let promise;
     	let current;
@@ -1093,7 +1141,7 @@ var app = (function () {
     		pending: create_pending_block,
     		then: create_then_block,
     		catch: create_catch_block,
-    		value: 4,
+    		value: 5,
     		blocks: [,,,]
     	};
 
@@ -1109,13 +1157,14 @@ var app = (function () {
     			h30.textContent = `My Score: ${/*score*/ ctx[2]}`;
     			t4 = space();
     			h31 = element("h3");
-    			h31.textContent = `Question # ${/*activeQuestion*/ ctx[1] + 1}`;
+    			t5 = text("Question # ");
+    			t6 = text(t6_value);
     			t7 = space();
     			info.block.c();
-    			add_location(button, file$1, 20, 2, 388);
-    			add_location(h30, file$1, 22, 2, 446);
-    			add_location(h31, file$1, 23, 2, 475);
-    			add_location(div, file$1, 19, 0, 380);
+    			add_location(button, file$1, 24, 2, 443);
+    			add_location(h30, file$1, 26, 2, 501);
+    			add_location(h31, file$1, 27, 2, 530);
+    			add_location(div, file$1, 23, 0, 435);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1127,6 +1176,8 @@ var app = (function () {
     			append_dev(div, h30);
     			append_dev(div, t4);
     			append_dev(div, h31);
+    			append_dev(h31, t5);
+    			append_dev(h31, t6);
     			append_dev(div, t7);
     			info.block.m(div, info.anchor = null);
     			info.mount = () => div;
@@ -1140,11 +1191,12 @@ var app = (function () {
     		},
     		p: function update(new_ctx, [dirty]) {
     			ctx = new_ctx;
+    			if ((!current || dirty & /*activeQuestion*/ 2) && t6_value !== (t6_value = /*activeQuestion*/ ctx[1] + 1 + "")) set_data_dev(t6, t6_value);
     			info.ctx = ctx;
 
     			if (dirty & /*quiz*/ 1 && promise !== (promise = /*quiz*/ ctx[0]) && handle_promise(promise, info)) ; else {
     				const child_ctx = ctx.slice();
-    				child_ctx[4] = info.resolved;
+    				child_ctx[5] = info.resolved;
     				info.block.p(child_ctx, dirty);
     			}
     		},
@@ -1197,6 +1249,10 @@ var app = (function () {
     		$$invalidate(0, quiz = getQuiz());
     	}
 
+    	function nextQuestion() {
+    		$$invalidate(1, ++activeQuestion);
+    	}
+
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -1212,7 +1268,8 @@ var app = (function () {
     		activeQuestion,
     		score,
     		getQuiz,
-    		handleClick
+    		handleClick,
+    		nextQuestion
     	});
 
     	$$self.$inject_state = $$props => {
@@ -1225,7 +1282,7 @@ var app = (function () {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [quiz, activeQuestion, score, handleClick];
+    	return [quiz, activeQuestion, score, handleClick, nextQuestion];
     }
 
     class Quiz extends SvelteComponentDev {
