@@ -1,5 +1,6 @@
 <script>
-  import { fade, blur, fly, slide, scale } from 'svelte/transition';
+  import { fly } from 'svelte/transition';
+  import { onMount } from 'svelte';
   import Question from './Question.svelte';
 
   let quiz = getQuiz();
@@ -36,6 +37,10 @@
   }
 
   $: questionNumber = activeQuestion + 1;
+
+  onMount(() => {
+    console.log('Mounted ✅');
+  });
 </script>
 
 <style>
