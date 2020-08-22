@@ -29,6 +29,13 @@
   const addToScore = () => {
     ++score;
   };
+
+  $: if (score > 7) {
+    alert('You won!');
+    resetQuiz();
+  }
+
+  $: questionNumber = activeQuestion + 1;
 </script>
 
 <style>
@@ -41,7 +48,7 @@
   <button on:click={resetQuiz}>Start New Quiz</button>
 
   <h3>My Score: {score}</h3>
-  <h3>Question # {activeQuestion + 1}</h3>
+  <h3>Question # {questionNumber}</h3>
   {#await quiz}
     Loading....
   {:then data}

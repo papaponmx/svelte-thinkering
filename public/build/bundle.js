@@ -1246,8 +1246,8 @@ var app = (function () {
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[8] = list[i];
-    	child_ctx[10] = i;
+    	child_ctx[9] = list[i];
+    	child_ctx[11] = i;
     	return child_ctx;
     }
 
@@ -1273,11 +1273,11 @@ var app = (function () {
     	return block;
     }
 
-    // (47:2) {:then data}
+    // (54:2) {:then data}
     function create_then_block(ctx) {
     	let each_1_anchor;
     	let current;
-    	let each_value = /*data*/ ctx[7].results;
+    	let each_value = /*data*/ ctx[8].results;
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -1306,8 +1306,8 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*addToScore, nextQuestion, quiz, activeQuestion*/ 43) {
-    				each_value = /*data*/ ctx[7].results;
+    			if (dirty & /*addToScore, nextQuestion, quiz, activeQuestion*/ 83) {
+    				each_value = /*data*/ ctx[8].results;
     				validate_each_argument(each_value);
     				let i;
 
@@ -1362,14 +1362,14 @@ var app = (function () {
     		block,
     		id: create_then_block.name,
     		type: "then",
-    		source: "(47:2) {:then data}",
+    		source: "(54:2) {:then data}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (50:6) {#if index === activeQuestion}
+    // (57:6) {#if index === activeQuestion}
     function create_if_block$1(ctx) {
     	let div;
     	let question;
@@ -1380,9 +1380,9 @@ var app = (function () {
 
     	question = new Question({
     			props: {
-    				addToScore: /*addToScore*/ ctx[5],
-    				nextQuestion: /*nextQuestion*/ ctx[3],
-    				question: /*question*/ ctx[8]
+    				addToScore: /*addToScore*/ ctx[6],
+    				nextQuestion: /*nextQuestion*/ ctx[4],
+    				question: /*question*/ ctx[9]
     			},
     			$$inline: true
     		});
@@ -1393,7 +1393,7 @@ var app = (function () {
     			create_component(question.$$.fragment);
     			t = space();
     			attr_dev(div, "class", "fade-wrapper svelte-jb84hu");
-    			add_location(div, file$1, 50, 8, 958);
+    			add_location(div, file$1, 57, 8, 1064);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1403,7 +1403,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const question_changes = {};
-    			if (dirty & /*quiz*/ 1) question_changes.question = /*question*/ ctx[8];
+    			if (dirty & /*quiz*/ 1) question_changes.question = /*question*/ ctx[9];
     			question.$set(question_changes);
     		},
     		i: function intro(local) {
@@ -1435,18 +1435,18 @@ var app = (function () {
     		block,
     		id: create_if_block$1.name,
     		type: "if",
-    		source: "(50:6) {#if index === activeQuestion}",
+    		source: "(57:6) {#if index === activeQuestion}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (49:4) {#each data.results as question, index}
+    // (56:4) {#each data.results as question, index}
     function create_each_block$1(ctx) {
     	let if_block_anchor;
     	let current;
-    	let if_block = /*index*/ ctx[10] === /*activeQuestion*/ ctx[1] && create_if_block$1(ctx);
+    	let if_block = /*index*/ ctx[11] === /*activeQuestion*/ ctx[1] && create_if_block$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -1459,7 +1459,7 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (/*index*/ ctx[10] === /*activeQuestion*/ ctx[1]) {
+    			if (/*index*/ ctx[11] === /*activeQuestion*/ ctx[1]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
 
@@ -1501,14 +1501,14 @@ var app = (function () {
     		block,
     		id: create_each_block$1.name,
     		type: "each",
-    		source: "(49:4) {#each data.results as question, index}",
+    		source: "(56:4) {#each data.results as question, index}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (45:15)      Loading....   {:then data}
+    // (52:15)      Loading....   {:then data}
     function create_pending_block(ctx) {
     	let t;
 
@@ -1531,7 +1531,7 @@ var app = (function () {
     		block,
     		id: create_pending_block.name,
     		type: "pending",
-    		source: "(45:15)      Loading....   {:then data}",
+    		source: "(52:15)      Loading....   {:then data}",
     		ctx
     	});
 
@@ -1548,7 +1548,6 @@ var app = (function () {
     	let t4;
     	let h31;
     	let t5;
-    	let t6_value = /*activeQuestion*/ ctx[1] + 1 + "";
     	let t6;
     	let t7;
     	let promise;
@@ -1563,7 +1562,7 @@ var app = (function () {
     		pending: create_pending_block,
     		then: create_then_block,
     		catch: create_catch_block,
-    		value: 7,
+    		value: 8,
     		blocks: [,,,]
     	};
 
@@ -1581,13 +1580,13 @@ var app = (function () {
     			t4 = space();
     			h31 = element("h3");
     			t5 = text("Question # ");
-    			t6 = text(t6_value);
+    			t6 = text(/*questionNumber*/ ctx[3]);
     			t7 = space();
     			info.block.c();
-    			add_location(button, file$1, 40, 2, 695);
-    			add_location(h30, file$1, 42, 2, 751);
-    			add_location(h31, file$1, 43, 2, 780);
-    			add_location(div, file$1, 39, 0, 687);
+    			add_location(button, file$1, 47, 2, 805);
+    			add_location(h30, file$1, 49, 2, 861);
+    			add_location(h31, file$1, 50, 2, 890);
+    			add_location(div, file$1, 46, 0, 797);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1610,19 +1609,19 @@ var app = (function () {
     			current = true;
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*resetQuiz*/ ctx[4], false, false, false);
+    				dispose = listen_dev(button, "click", /*resetQuiz*/ ctx[5], false, false, false);
     				mounted = true;
     			}
     		},
     		p: function update(new_ctx, [dirty]) {
     			ctx = new_ctx;
     			if (!current || dirty & /*score*/ 4) set_data_dev(t3, /*score*/ ctx[2]);
-    			if ((!current || dirty & /*activeQuestion*/ 2) && t6_value !== (t6_value = /*activeQuestion*/ ctx[1] + 1 + "")) set_data_dev(t6, t6_value);
+    			if (!current || dirty & /*questionNumber*/ 8) set_data_dev(t6, /*questionNumber*/ ctx[3]);
     			info.ctx = ctx;
 
     			if (dirty & /*quiz*/ 1 && promise !== (promise = /*quiz*/ ctx[0]) && handle_promise(promise, info)) ; else {
     				const child_ctx = ctx.slice();
-    				child_ctx[7] = info.resolved;
+    				child_ctx[8] = info.resolved;
     				info.block.p(child_ctx, dirty);
     			}
     		},
@@ -1711,20 +1710,45 @@ var app = (function () {
     		handleClick,
     		nextQuestion,
     		resetQuiz,
-    		addToScore
+    		addToScore,
+    		questionNumber
     	});
 
     	$$self.$inject_state = $$props => {
     		if ("quiz" in $$props) $$invalidate(0, quiz = $$props.quiz);
     		if ("activeQuestion" in $$props) $$invalidate(1, activeQuestion = $$props.activeQuestion);
     		if ("score" in $$props) $$invalidate(2, score = $$props.score);
+    		if ("questionNumber" in $$props) $$invalidate(3, questionNumber = $$props.questionNumber);
     	};
+
+    	let questionNumber;
 
     	if ($$props && "$$inject" in $$props) {
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [quiz, activeQuestion, score, nextQuestion, resetQuiz, addToScore];
+    	$$self.$$.update = () => {
+    		if ($$self.$$.dirty & /*score*/ 4) {
+    			 if (score > 7) {
+    				alert("You won!");
+    				resetQuiz();
+    			}
+    		}
+
+    		if ($$self.$$.dirty & /*activeQuestion*/ 2) {
+    			 $$invalidate(3, questionNumber = activeQuestion + 1);
+    		}
+    	};
+
+    	return [
+    		quiz,
+    		activeQuestion,
+    		score,
+    		questionNumber,
+    		nextQuestion,
+    		resetQuiz,
+    		addToScore
+    	];
     }
 
     class Quiz extends SvelteComponentDev {
