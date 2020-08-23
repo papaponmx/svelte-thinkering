@@ -107,6 +107,9 @@ var app = (function () {
     function children(element) {
         return Array.from(element.childNodes);
     }
+    function toggle_class(element, name, toggle) {
+        element.classList[toggle ? 'add' : 'remove'](name);
+    }
     function custom_event(type, detail) {
         const e = document.createEvent('CustomEvent');
         e.initCustomEvent(type, false, false, detail);
@@ -709,7 +712,7 @@ var app = (function () {
     	return child_ctx;
     }
 
-    // (37:0) {#if isAnswered}
+    // (47:0) {#if isAnswered}
     function create_if_block_1(ctx) {
     	let h4;
 
@@ -725,7 +728,9 @@ var app = (function () {
     		c: function create() {
     			h4 = element("h4");
     			if_block.c();
-    			add_location(h4, file, 37, 2, 644);
+    			attr_dev(h4, "class", "svelte-230vb5");
+    			toggle_class(h4, "isCorrect", /*isCorrect*/ ctx[2]);
+    			add_location(h4, file, 47, 2, 729);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, h4, anchor);
@@ -741,6 +746,10 @@ var app = (function () {
     					if_block.m(h4, null);
     				}
     			}
+
+    			if (dirty & /*isCorrect*/ 4) {
+    				toggle_class(h4, "isCorrect", /*isCorrect*/ ctx[2]);
+    			}
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(h4);
@@ -752,14 +761,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(37:0) {#if isAnswered}",
+    		source: "(47:0) {#if isAnswered}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (39:35) {:else}
+    // (49:35) {:else}
     function create_else_block(ctx) {
     	let t;
 
@@ -779,14 +788,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(39:35) {:else}",
+    		source: "(49:35) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (39:4) {#if isCorrect}
+    // (49:4) {#if isCorrect}
     function create_if_block_2(ctx) {
     	let t;
 
@@ -806,14 +815,14 @@ var app = (function () {
     		block,
     		id: create_if_block_2.name,
     		type: "if",
-    		source: "(39:4) {#if isCorrect}",
+    		source: "(49:4) {#if isCorrect}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (43:0) {#each allAnswers as answer}
+    // (53:0) {#each allAnswers as answer}
     function create_each_block(ctx) {
     	let button;
     	let raw_value = /*answer*/ ctx[10].answer + "";
@@ -827,7 +836,7 @@ var app = (function () {
     	const block = {
     		c: function create() {
     			button = element("button");
-    			add_location(button, file, 43, 2, 756);
+    			add_location(button, file, 53, 2, 857);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -852,14 +861,14 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(43:0) {#each allAnswers as answer}",
+    		source: "(53:0) {#each allAnswers as answer}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (48:0) {#if isAnswered}
+    // (58:0) {#if isAnswered}
     function create_if_block(ctx) {
     	let button;
     	let mounted;
@@ -869,7 +878,7 @@ var app = (function () {
     		c: function create() {
     			button = element("button");
     			button.textContent = "Next Question";
-    			add_location(button, file, 48, 2, 877);
+    			add_location(button, file, 58, 2, 978);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -903,7 +912,7 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(48:0) {#if isAnswered}",
+    		source: "(58:0) {#if isAnswered}",
     		ctx
     	});
 
@@ -942,7 +951,7 @@ var app = (function () {
     			t2 = space();
     			if (if_block1) if_block1.c();
     			if_block1_anchor = empty();
-    			add_location(h3, file, 32, 0, 585);
+    			add_location(h3, file, 42, 0, 670);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");

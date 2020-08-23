@@ -30,12 +30,22 @@
   shuffle(allAnswers);
 </script>
 
+<style>
+  h4 {
+    color: red;
+  }
+
+  h4.isCorrect {
+    color: green;
+  }
+</style>
+
 <h3>
   {@html question.question}
 </h3>
 
 {#if isAnswered}
-  <h4>
+  <h4 class:isCorrect>
     {#if isCorrect}You got it right{:else}You goofed up{/if}
   </h4>
 {/if}
