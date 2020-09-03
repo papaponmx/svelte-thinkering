@@ -65,9 +65,9 @@
   {/await}
 </div>
 {#if isModalOpen}
-  <Modal>
+  <Modal on:CLOSE_MODAL={resetQuiz}>
     <h2>You Won!</h2>
     <p>Congratulations</p>
-    <button on:click={() => resetQuiz()}>Start over</button>
+    <button on:click={resetQuiz}>Start over</button>
   </Modal>
 {/if}

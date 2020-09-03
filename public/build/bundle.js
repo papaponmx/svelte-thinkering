@@ -228,6 +228,20 @@ var app = (function () {
             throw new Error(`Function called outside component initialization`);
         return current_component;
     }
+    function createEventDispatcher() {
+        const component = get_current_component();
+        return (type, detail) => {
+            const callbacks = component.$$.callbacks[type];
+            if (callbacks) {
+                // TODO are there situations where events could be dispatched
+                // in a server (non-DOM) environment?
+                const event = custom_event(type, detail);
+                callbacks.slice().forEach(fn => {
+                    fn.call(component, event);
+                });
+            }
+        };
+    }
 
     const dirty_components = [];
     const binding_callbacks = [];
@@ -1342,8 +1356,10 @@ var app = (function () {
     	let t1;
     	let div0_transition;
     	let current;
-    	const default_slot_template = /*$$slots*/ ctx[1].default;
-    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[0], null);
+    	let mounted;
+    	let dispose;
+    	const default_slot_template = /*$$slots*/ ctx[2].default;
+    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[1], null);
 
     	const block = {
     		c: function create() {
@@ -1353,11 +1369,11 @@ var app = (function () {
     			button.textContent = "close";
     			t1 = space();
     			if (default_slot) default_slot.c();
-    			add_location(button, file$1, 23, 4, 382);
+    			add_location(button, file$1, 26, 4, 477);
     			attr_dev(div0, "class", "modal svelte-9rvzlq");
-    			add_location(div0, file$1, 22, 2, 330);
+    			add_location(div0, file$1, 25, 2, 425);
     			attr_dev(div1, "class", "modal-bg svelte-9rvzlq");
-    			add_location(div1, file$1, 21, 0, 305);
+    			add_location(div1, file$1, 24, 0, 400);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1373,11 +1389,16 @@ var app = (function () {
     			}
 
     			current = true;
+
+    			if (!mounted) {
+    				dispose = listen_dev(button, "click", /*click_handler*/ ctx[3], false, false, false);
+    				mounted = true;
+    			}
     		},
     		p: function update(ctx, [dirty]) {
     			if (default_slot) {
-    				if (default_slot.p && dirty & /*$$scope*/ 1) {
-    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[0], dirty, null, null);
+    				if (default_slot.p && dirty & /*$$scope*/ 2) {
+    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[1], dirty, null, null);
     				}
     			}
     		},
@@ -1402,6 +1423,8 @@ var app = (function () {
     			if (detaching) detach_dev(div1);
     			if (default_slot) default_slot.d(detaching);
     			if (detaching && div0_transition) div0_transition.end();
+    			mounted = false;
+    			dispose();
     		}
     	};
 
@@ -1417,6 +1440,7 @@ var app = (function () {
     }
 
     function instance$1($$self, $$props, $$invalidate) {
+    	const dispatch = createEventDispatcher();
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -1425,13 +1449,14 @@ var app = (function () {
 
     	let { $$slots = {}, $$scope } = $$props;
     	validate_slots("Modal", $$slots, ['default']);
+    	const click_handler = () => dispatch("CLOSE_MODAL");
 
     	$$self.$$set = $$props => {
-    		if ("$$scope" in $$props) $$invalidate(0, $$scope = $$props.$$scope);
+    		if ("$$scope" in $$props) $$invalidate(1, $$scope = $$props.$$scope);
     	};
 
-    	$$self.$capture_state = () => ({ fly });
-    	return [$$scope, $$slots];
+    	$$self.$capture_state = () => ({ fly, createEventDispatcher, dispatch });
+    	return [dispatch, $$scope, $$slots, click_handler];
     }
 
     class Modal extends SvelteComponentDev {
@@ -1453,8 +1478,8 @@ var app = (function () {
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[11] = list[i];
-    	child_ctx[13] = i;
+    	child_ctx[10] = list[i];
+    	child_ctx[12] = i;
     	return child_ctx;
     }
 
@@ -1484,7 +1509,7 @@ var app = (function () {
     function create_then_block(ctx) {
     	let each_1_anchor;
     	let current;
-    	let each_value = /*data*/ ctx[10].results;
+    	let each_value = /*data*/ ctx[9].results;
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -1514,7 +1539,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			if (dirty & /*addToScore, nextQuestion, quiz, activeQuestion*/ 165) {
-    				each_value = /*data*/ ctx[10].results;
+    				each_value = /*data*/ ctx[9].results;
     				validate_each_argument(each_value);
     				let i;
 
@@ -1589,7 +1614,7 @@ var app = (function () {
     			props: {
     				addToScore: /*addToScore*/ ctx[7],
     				nextQuestion: /*nextQuestion*/ ctx[5],
-    				question: /*question*/ ctx[11]
+    				question: /*question*/ ctx[10]
     			},
     			$$inline: true
     		});
@@ -1610,7 +1635,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const question_changes = {};
-    			if (dirty & /*quiz*/ 4) question_changes.question = /*question*/ ctx[11];
+    			if (dirty & /*quiz*/ 4) question_changes.question = /*question*/ ctx[10];
     			question.$set(question_changes);
     		},
     		i: function intro(local) {
@@ -1653,7 +1678,7 @@ var app = (function () {
     function create_each_block$1(ctx) {
     	let if_block_anchor;
     	let current;
-    	let if_block = /*index*/ ctx[13] === /*activeQuestion*/ ctx[0] && create_if_block_1$1(ctx);
+    	let if_block = /*index*/ ctx[12] === /*activeQuestion*/ ctx[0] && create_if_block_1$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -1666,7 +1691,7 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (/*index*/ ctx[13] === /*activeQuestion*/ ctx[0]) {
+    			if (/*index*/ ctx[12] === /*activeQuestion*/ ctx[0]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
 
@@ -1758,6 +1783,8 @@ var app = (function () {
     			$$inline: true
     		});
 
+    	modal.$on("CLOSE_MODAL", /*resetQuiz*/ ctx[6]);
+
     	const block = {
     		c: function create() {
     			create_component(modal.$$.fragment);
@@ -1769,7 +1796,7 @@ var app = (function () {
     		p: function update(ctx, dirty) {
     			const modal_changes = {};
 
-    			if (dirty & /*$$scope*/ 16384) {
+    			if (dirty & /*$$scope*/ 8192) {
     				modal_changes.$$scope = { dirty, ctx };
     			}
 
@@ -1800,7 +1827,7 @@ var app = (function () {
     	return block;
     }
 
-    // (68:2) <Modal>
+    // (68:2) <Modal on:CLOSE_MODAL={resetQuiz}>
     function create_default_slot(ctx) {
     	let h2;
     	let t1;
@@ -1820,9 +1847,9 @@ var app = (function () {
     			t3 = space();
     			button = element("button");
     			button.textContent = "Start over";
-    			add_location(h2, file$2, 68, 4, 1332);
-    			add_location(p, file$2, 69, 4, 1354);
-    			add_location(button, file$2, 70, 4, 1381);
+    			add_location(h2, file$2, 68, 4, 1359);
+    			add_location(p, file$2, 69, 4, 1381);
+    			add_location(button, file$2, 70, 4, 1408);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, h2, anchor);
@@ -1832,7 +1859,7 @@ var app = (function () {
     			insert_dev(target, button, anchor);
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*click_handler*/ ctx[8], false, false, false);
+    				dispose = listen_dev(button, "click", /*resetQuiz*/ ctx[6], false, false, false);
     				mounted = true;
     			}
     		},
@@ -1852,7 +1879,7 @@ var app = (function () {
     		block,
     		id: create_default_slot.name,
     		type: "slot",
-    		source: "(68:2) <Modal>",
+    		source: "(68:2) <Modal on:CLOSE_MODAL={resetQuiz}>",
     		ctx
     	});
 
@@ -1885,7 +1912,7 @@ var app = (function () {
     		pending: create_pending_block,
     		then: create_then_block,
     		catch: create_catch_block,
-    		value: 10,
+    		value: 9,
     		blocks: [,,,]
     	};
 
@@ -1951,7 +1978,7 @@ var app = (function () {
 
     			if (dirty & /*quiz*/ 4 && promise !== (promise = /*quiz*/ ctx[2]) && handle_promise(promise, info)) ; else {
     				const child_ctx = ctx.slice();
-    				child_ctx[10] = info.resolved;
+    				child_ctx[9] = info.resolved;
     				info.block.p(child_ctx, dirty);
     			}
 
@@ -2055,7 +2082,6 @@ var app = (function () {
 
     	let { $$slots = {}, $$scope } = $$props;
     	validate_slots("Quiz", $$slots, []);
-    	const click_handler = () => resetQuiz();
 
     	$$self.$capture_state = () => ({
     		fly,
@@ -2107,8 +2133,7 @@ var app = (function () {
     		questionNumber,
     		nextQuestion,
     		resetQuiz,
-    		addToScore,
-    		click_handler
+    		addToScore
     	];
     }
 
