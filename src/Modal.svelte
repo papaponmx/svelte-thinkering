@@ -5,7 +5,7 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<style>
+<style lang="scss">
   .modal-bg {
     background-color: rgba(0, 0, 0, 0.8);
     bottom: 0;
@@ -13,13 +13,13 @@
     position: fixed;
     right: 0;
     top: 0;
+    .modal {
+      background-color: white;
+      padding: 20px;
+      border-radius: 15px;
+    }
   }
 
-  .modal {
-    background-color: white;
-    padding: 20px;
-    border-radius: 15px;
-  }
 </style>
 
 <div class="modal-bg">
