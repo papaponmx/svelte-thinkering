@@ -51,10 +51,9 @@
 {/if}
 
 {#each allAnswers as answer}
-  <button on:click={() => checkQuestion(answer.correct)}>
+  <button on:click|once={() => checkQuestion(answer.correct)}>
     {@html answer.answer}
   </button>
 {/each}
-{#if isAnswered}
-  <button on:click={nextQuestion}>Next Question</button>
-{/if}
+
+{#if isAnswered}<button on:click={nextQuestion}>Next Question</button>{/if}

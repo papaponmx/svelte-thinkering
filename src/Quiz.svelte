@@ -1,10 +1,13 @@
 <script>
   import { fly } from 'svelte/transition';
   import Question from './Question.svelte';
+  import Modal from './Modal.svelte';
 
-  let quiz = getQuiz();
   let activeQuestion = 0;
+  let isModalOpen = false;
+  let quiz = getQuiz();
   let score = 0;
+
   async function getQuiz() {
     const res = await fetch(
       'https://opentdb.com/api.php?amount=10&category=12&type=multiple',
@@ -22,6 +25,7 @@
   }
 
   const resetQuiz = () => {
+    isModalOpen = false;
     score = 0;
     quiz = getQuiz();
   };
@@ -31,8 +35,7 @@
   };
 
   $: if (score > 7) {
-    alert('You won!');
-    resetQuiz();
+    isModalOpen = true;
   }
 
   $: questionNumber = activeQuestion + 1;
@@ -52,7 +55,6 @@
   {#await quiz}
     Loading....
   {:then data}
-
     {#each data.results as question, index}
       {#if index === activeQuestion}
         <div in:fly={{ x: 100 }} out:fly={{ x: -200 }} class="fade-wrapper">
@@ -60,6 +62,12 @@
         </div>
       {/if}
     {/each}
-
   {/await}
 </div>
+{#if isModalOpen}
+  <Modal>
+    <h2>You Won!</h2>
+    <p>Congratulations</p>
+    <button on:click={() => resetQuiz()}>Start over</button>
+  </Modal>
+{/if}

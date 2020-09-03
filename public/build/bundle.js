@@ -5,6 +5,12 @@ var app = (function () {
 
     function noop() { }
     const identity = x => x;
+    function assign(tar, src) {
+        // @ts-ignore
+        for (const k in src)
+            tar[k] = src[k];
+        return tar;
+    }
     function is_promise(value) {
         return value && typeof value === 'object' && typeof value.then === 'function';
     }
@@ -30,6 +36,42 @@ var app = (function () {
     }
     function is_empty(obj) {
         return Object.keys(obj).length === 0;
+    }
+    function create_slot(definition, ctx, $$scope, fn) {
+        if (definition) {
+            const slot_ctx = get_slot_context(definition, ctx, $$scope, fn);
+            return definition[0](slot_ctx);
+        }
+    }
+    function get_slot_context(definition, ctx, $$scope, fn) {
+        return definition[1] && fn
+            ? assign($$scope.ctx.slice(), definition[1](fn(ctx)))
+            : $$scope.ctx;
+    }
+    function get_slot_changes(definition, $$scope, dirty, fn) {
+        if (definition[2] && fn) {
+            const lets = definition[2](fn(dirty));
+            if ($$scope.dirty === undefined) {
+                return lets;
+            }
+            if (typeof lets === 'object') {
+                const merged = [];
+                const len = Math.max($$scope.dirty.length, lets.length);
+                for (let i = 0; i < len; i += 1) {
+                    merged[i] = $$scope.dirty[i] | lets[i];
+                }
+                return merged;
+            }
+            return $$scope.dirty | lets;
+        }
+        return $$scope.dirty;
+    }
+    function update_slot(slot, slot_definition, ctx, $$scope, dirty, get_slot_changes_fn, get_slot_context_fn) {
+        const slot_changes = get_slot_changes(slot_definition, $$scope, dirty, get_slot_changes_fn);
+        if (slot_changes) {
+            const slot_context = get_slot_context(slot_definition, ctx, $$scope, get_slot_context_fn);
+            slot.p(slot_context, slot_changes);
+        }
     }
 
     const is_client = typeof window !== 'undefined';
@@ -416,6 +458,111 @@ var app = (function () {
                         delete_rule(node, animation_name);
                     running = false;
                 }
+            }
+        };
+    }
+    function create_bidirectional_transition(node, fn, params, intro) {
+        let config = fn(node, params);
+        let t = intro ? 0 : 1;
+        let running_program = null;
+        let pending_program = null;
+        let animation_name = null;
+        function clear_animation() {
+            if (animation_name)
+                delete_rule(node, animation_name);
+        }
+        function init(program, duration) {
+            const d = program.b - t;
+            duration *= Math.abs(d);
+            return {
+                a: t,
+                b: program.b,
+                d,
+                duration,
+                start: program.start,
+                end: program.start + duration,
+                group: program.group
+            };
+        }
+        function go(b) {
+            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config || null_transition;
+            const program = {
+                start: now() + delay,
+                b
+            };
+            if (!b) {
+                // @ts-ignore todo: improve typings
+                program.group = outros;
+                outros.r += 1;
+            }
+            if (running_program) {
+                pending_program = program;
+            }
+            else {
+                // if this is an intro, and there's a delay, we need to do
+                // an initial tick and/or apply CSS animation immediately
+                if (css) {
+                    clear_animation();
+                    animation_name = create_rule(node, t, b, duration, delay, easing, css);
+                }
+                if (b)
+                    tick(0, 1);
+                running_program = init(program, duration);
+                add_render_callback(() => dispatch(node, b, 'start'));
+                loop(now => {
+                    if (pending_program && now > pending_program.start) {
+                        running_program = init(pending_program, duration);
+                        pending_program = null;
+                        dispatch(node, running_program.b, 'start');
+                        if (css) {
+                            clear_animation();
+                            animation_name = create_rule(node, t, running_program.b, running_program.duration, 0, easing, config.css);
+                        }
+                    }
+                    if (running_program) {
+                        if (now >= running_program.end) {
+                            tick(t = running_program.b, 1 - t);
+                            dispatch(node, running_program.b, 'end');
+                            if (!pending_program) {
+                                // we're done
+                                if (running_program.b) {
+                                    // intro — we can tidy up immediately
+                                    clear_animation();
+                                }
+                                else {
+                                    // outro — needs to be coordinated
+                                    if (!--running_program.group.r)
+                                        run_all(running_program.group.c);
+                                }
+                            }
+                            running_program = null;
+                        }
+                        else if (now >= running_program.start) {
+                            const p = now - running_program.start;
+                            t = running_program.a + running_program.d * easing(p / running_program.duration);
+                            tick(t, 1 - t);
+                        }
+                    }
+                    return !!(running_program || pending_program);
+                });
+            }
+        }
+        return {
+            run(b) {
+                if (is_function(config)) {
+                    wait().then(() => {
+                        // @ts-ignore
+                        config = config();
+                        go(b);
+                    });
+                }
+                else {
+                    go(b);
+                }
+            },
+            end() {
+                clear_animation();
+                running_program = pending_program = null;
             }
         };
     }
@@ -843,7 +990,7 @@ var app = (function () {
     			button.innerHTML = raw_value;
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", click_handler, false, false, false);
+    				dispose = listen_dev(button, "click", click_handler, { once: true }, false, false);
     				mounted = true;
     			}
     		},
@@ -868,7 +1015,7 @@ var app = (function () {
     	return block;
     }
 
-    // (58:0) {#if isAnswered}
+    // (59:0) {#if isAnswered}
     function create_if_block(ctx) {
     	let button;
     	let mounted;
@@ -878,7 +1025,7 @@ var app = (function () {
     		c: function create() {
     			button = element("button");
     			button.textContent = "Next Question";
-    			add_location(button, file, 58, 2, 978);
+    			add_location(button, file, 58, 16, 981);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -912,7 +1059,7 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(58:0) {#if isAnswered}",
+    		source: "(59:0) {#if isAnswered}",
     		ctx
     	});
 
@@ -1185,13 +1332,129 @@ var app = (function () {
     	}
     }
 
+    /* src/Modal.svelte generated by Svelte v3.24.1 */
+    const file$1 = "src/Modal.svelte";
+
+    function create_fragment$1(ctx) {
+    	let div1;
+    	let div0;
+    	let button;
+    	let t1;
+    	let div0_transition;
+    	let current;
+    	const default_slot_template = /*$$slots*/ ctx[1].default;
+    	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[0], null);
+
+    	const block = {
+    		c: function create() {
+    			div1 = element("div");
+    			div0 = element("div");
+    			button = element("button");
+    			button.textContent = "close";
+    			t1 = space();
+    			if (default_slot) default_slot.c();
+    			add_location(button, file$1, 23, 4, 382);
+    			attr_dev(div0, "class", "modal svelte-9rvzlq");
+    			add_location(div0, file$1, 22, 2, 330);
+    			attr_dev(div1, "class", "modal-bg svelte-9rvzlq");
+    			add_location(div1, file$1, 21, 0, 305);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div1, anchor);
+    			append_dev(div1, div0);
+    			append_dev(div0, button);
+    			append_dev(div0, t1);
+
+    			if (default_slot) {
+    				default_slot.m(div0, null);
+    			}
+
+    			current = true;
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (default_slot) {
+    				if (default_slot.p && dirty & /*$$scope*/ 1) {
+    					update_slot(default_slot, default_slot_template, ctx, /*$$scope*/ ctx[0], dirty, null, null);
+    				}
+    			}
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(default_slot, local);
+
+    			add_render_callback(() => {
+    				if (!div0_transition) div0_transition = create_bidirectional_transition(div0, fly, { y: 200 }, true);
+    				div0_transition.run(1);
+    			});
+
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(default_slot, local);
+    			if (!div0_transition) div0_transition = create_bidirectional_transition(div0, fly, { y: 200 }, false);
+    			div0_transition.run(0);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div1);
+    			if (default_slot) default_slot.d(detaching);
+    			if (detaching && div0_transition) div0_transition.end();
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$1.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$1($$self, $$props, $$invalidate) {
+    	const writable_props = [];
+
+    	Object.keys($$props).forEach(key => {
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<Modal> was created with unknown prop '${key}'`);
+    	});
+
+    	let { $$slots = {}, $$scope } = $$props;
+    	validate_slots("Modal", $$slots, ['default']);
+
+    	$$self.$$set = $$props => {
+    		if ("$$scope" in $$props) $$invalidate(0, $$scope = $$props.$$scope);
+    	};
+
+    	$$self.$capture_state = () => ({ fly });
+    	return [$$scope, $$slots];
+    }
+
+    class Modal extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+    		init(this, options, instance$1, create_fragment$1, safe_not_equal, {});
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "Modal",
+    			options,
+    			id: create_fragment$1.name
+    		});
+    	}
+    }
+
     /* src/Quiz.svelte generated by Svelte v3.24.1 */
-    const file$1 = "src/Quiz.svelte";
+    const file$2 = "src/Quiz.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[9] = list[i];
-    	child_ctx[11] = i;
+    	child_ctx[11] = list[i];
+    	child_ctx[13] = i;
     	return child_ctx;
     }
 
@@ -1217,11 +1480,11 @@ var app = (function () {
     	return block;
     }
 
-    // (54:2) {:then data}
+    // (57:2) {:then data}
     function create_then_block(ctx) {
     	let each_1_anchor;
     	let current;
-    	let each_value = /*data*/ ctx[8].results;
+    	let each_value = /*data*/ ctx[10].results;
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -1250,8 +1513,8 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*addToScore, nextQuestion, quiz, activeQuestion*/ 83) {
-    				each_value = /*data*/ ctx[8].results;
+    			if (dirty & /*addToScore, nextQuestion, quiz, activeQuestion*/ 165) {
+    				each_value = /*data*/ ctx[10].results;
     				validate_each_argument(each_value);
     				let i;
 
@@ -1306,15 +1569,15 @@ var app = (function () {
     		block,
     		id: create_then_block.name,
     		type: "then",
-    		source: "(54:2) {:then data}",
+    		source: "(57:2) {:then data}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (57:6) {#if index === activeQuestion}
-    function create_if_block$1(ctx) {
+    // (59:6) {#if index === activeQuestion}
+    function create_if_block_1$1(ctx) {
     	let div;
     	let question;
     	let t;
@@ -1324,9 +1587,9 @@ var app = (function () {
 
     	question = new Question({
     			props: {
-    				addToScore: /*addToScore*/ ctx[6],
-    				nextQuestion: /*nextQuestion*/ ctx[4],
-    				question: /*question*/ ctx[9]
+    				addToScore: /*addToScore*/ ctx[7],
+    				nextQuestion: /*nextQuestion*/ ctx[5],
+    				question: /*question*/ ctx[11]
     			},
     			$$inline: true
     		});
@@ -1337,7 +1600,7 @@ var app = (function () {
     			create_component(question.$$.fragment);
     			t = space();
     			attr_dev(div, "class", "fade-wrapper svelte-jb84hu");
-    			add_location(div, file$1, 57, 8, 1038);
+    			add_location(div, file$2, 59, 8, 1112);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -1347,7 +1610,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const question_changes = {};
-    			if (dirty & /*quiz*/ 1) question_changes.question = /*question*/ ctx[9];
+    			if (dirty & /*quiz*/ 4) question_changes.question = /*question*/ ctx[11];
     			question.$set(question_changes);
     		},
     		i: function intro(local) {
@@ -1377,20 +1640,20 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block$1.name,
+    		id: create_if_block_1$1.name,
     		type: "if",
-    		source: "(57:6) {#if index === activeQuestion}",
+    		source: "(59:6) {#if index === activeQuestion}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (56:4) {#each data.results as question, index}
+    // (58:4) {#each data.results as question, index}
     function create_each_block$1(ctx) {
     	let if_block_anchor;
     	let current;
-    	let if_block = /*index*/ ctx[11] === /*activeQuestion*/ ctx[1] && create_if_block$1(ctx);
+    	let if_block = /*index*/ ctx[13] === /*activeQuestion*/ ctx[0] && create_if_block_1$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -1403,15 +1666,15 @@ var app = (function () {
     			current = true;
     		},
     		p: function update(ctx, dirty) {
-    			if (/*index*/ ctx[11] === /*activeQuestion*/ ctx[1]) {
+    			if (/*index*/ ctx[13] === /*activeQuestion*/ ctx[0]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
 
-    					if (dirty & /*activeQuestion*/ 2) {
+    					if (dirty & /*activeQuestion*/ 1) {
     						transition_in(if_block, 1);
     					}
     				} else {
-    					if_block = create_if_block$1(ctx);
+    					if_block = create_if_block_1$1(ctx);
     					if_block.c();
     					transition_in(if_block, 1);
     					if_block.m(if_block_anchor.parentNode, if_block_anchor);
@@ -1445,14 +1708,14 @@ var app = (function () {
     		block,
     		id: create_each_block$1.name,
     		type: "each",
-    		source: "(56:4) {#each data.results as question, index}",
+    		source: "(58:4) {#each data.results as question, index}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (52:15)      Loading....   {:then data}
+    // (55:15)      Loading....   {:then data}
     function create_pending_block(ctx) {
     	let t;
 
@@ -1475,14 +1738,128 @@ var app = (function () {
     		block,
     		id: create_pending_block.name,
     		type: "pending",
-    		source: "(52:15)      Loading....   {:then data}",
+    		source: "(55:15)      Loading....   {:then data}",
     		ctx
     	});
 
     	return block;
     }
 
-    function create_fragment$1(ctx) {
+    // (67:0) {#if isModalOpen}
+    function create_if_block$1(ctx) {
+    	let modal;
+    	let current;
+
+    	modal = new Modal({
+    			props: {
+    				$$slots: { default: [create_default_slot] },
+    				$$scope: { ctx }
+    			},
+    			$$inline: true
+    		});
+
+    	const block = {
+    		c: function create() {
+    			create_component(modal.$$.fragment);
+    		},
+    		m: function mount(target, anchor) {
+    			mount_component(modal, target, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			const modal_changes = {};
+
+    			if (dirty & /*$$scope*/ 16384) {
+    				modal_changes.$$scope = { dirty, ctx };
+    			}
+
+    			modal.$set(modal_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(modal.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(modal.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			destroy_component(modal, detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block$1.name,
+    		type: "if",
+    		source: "(67:0) {#if isModalOpen}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (68:2) <Modal>
+    function create_default_slot(ctx) {
+    	let h2;
+    	let t1;
+    	let p;
+    	let t3;
+    	let button;
+    	let mounted;
+    	let dispose;
+
+    	const block = {
+    		c: function create() {
+    			h2 = element("h2");
+    			h2.textContent = "You Won!";
+    			t1 = space();
+    			p = element("p");
+    			p.textContent = "Congratulations";
+    			t3 = space();
+    			button = element("button");
+    			button.textContent = "Start over";
+    			add_location(h2, file$2, 68, 4, 1332);
+    			add_location(p, file$2, 69, 4, 1354);
+    			add_location(button, file$2, 70, 4, 1381);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, h2, anchor);
+    			insert_dev(target, t1, anchor);
+    			insert_dev(target, p, anchor);
+    			insert_dev(target, t3, anchor);
+    			insert_dev(target, button, anchor);
+
+    			if (!mounted) {
+    				dispose = listen_dev(button, "click", /*click_handler*/ ctx[8], false, false, false);
+    				mounted = true;
+    			}
+    		},
+    		p: noop,
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(h2);
+    			if (detaching) detach_dev(t1);
+    			if (detaching) detach_dev(p);
+    			if (detaching) detach_dev(t3);
+    			if (detaching) detach_dev(button);
+    			mounted = false;
+    			dispose();
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_default_slot.name,
+    		type: "slot",
+    		source: "(68:2) <Modal>",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function create_fragment$2(ctx) {
     	let div;
     	let button;
     	let t1;
@@ -1495,6 +1872,8 @@ var app = (function () {
     	let t6;
     	let t7;
     	let promise;
+    	let t8;
+    	let if_block_anchor;
     	let current;
     	let mounted;
     	let dispose;
@@ -1506,11 +1885,12 @@ var app = (function () {
     		pending: create_pending_block,
     		then: create_then_block,
     		catch: create_catch_block,
-    		value: 8,
+    		value: 10,
     		blocks: [,,,]
     	};
 
-    	handle_promise(promise = /*quiz*/ ctx[0], info);
+    	handle_promise(promise = /*quiz*/ ctx[2], info);
+    	let if_block = /*isModalOpen*/ ctx[1] && create_if_block$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -1520,17 +1900,20 @@ var app = (function () {
     			t1 = space();
     			h30 = element("h3");
     			t2 = text("My Score: ");
-    			t3 = text(/*score*/ ctx[2]);
+    			t3 = text(/*score*/ ctx[3]);
     			t4 = space();
     			h31 = element("h3");
     			t5 = text("Question # ");
-    			t6 = text(/*questionNumber*/ ctx[3]);
+    			t6 = text(/*questionNumber*/ ctx[4]);
     			t7 = space();
     			info.block.c();
-    			add_location(button, file$1, 47, 2, 779);
-    			add_location(h30, file$1, 49, 2, 835);
-    			add_location(h31, file$1, 50, 2, 864);
-    			add_location(div, file$1, 46, 0, 771);
+    			t8 = space();
+    			if (if_block) if_block.c();
+    			if_block_anchor = empty();
+    			add_location(button, file$2, 50, 2, 854);
+    			add_location(h30, file$2, 52, 2, 910);
+    			add_location(h31, file$2, 53, 2, 939);
+    			add_location(div, file$2, 49, 0, 846);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1550,28 +1933,55 @@ var app = (function () {
     			info.block.m(div, info.anchor = null);
     			info.mount = () => div;
     			info.anchor = null;
+    			insert_dev(target, t8, anchor);
+    			if (if_block) if_block.m(target, anchor);
+    			insert_dev(target, if_block_anchor, anchor);
     			current = true;
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*resetQuiz*/ ctx[5], false, false, false);
+    				dispose = listen_dev(button, "click", /*resetQuiz*/ ctx[6], false, false, false);
     				mounted = true;
     			}
     		},
     		p: function update(new_ctx, [dirty]) {
     			ctx = new_ctx;
-    			if (!current || dirty & /*score*/ 4) set_data_dev(t3, /*score*/ ctx[2]);
-    			if (!current || dirty & /*questionNumber*/ 8) set_data_dev(t6, /*questionNumber*/ ctx[3]);
+    			if (!current || dirty & /*score*/ 8) set_data_dev(t3, /*score*/ ctx[3]);
+    			if (!current || dirty & /*questionNumber*/ 16) set_data_dev(t6, /*questionNumber*/ ctx[4]);
     			info.ctx = ctx;
 
-    			if (dirty & /*quiz*/ 1 && promise !== (promise = /*quiz*/ ctx[0]) && handle_promise(promise, info)) ; else {
+    			if (dirty & /*quiz*/ 4 && promise !== (promise = /*quiz*/ ctx[2]) && handle_promise(promise, info)) ; else {
     				const child_ctx = ctx.slice();
-    				child_ctx[8] = info.resolved;
+    				child_ctx[10] = info.resolved;
     				info.block.p(child_ctx, dirty);
+    			}
+
+    			if (/*isModalOpen*/ ctx[1]) {
+    				if (if_block) {
+    					if_block.p(ctx, dirty);
+
+    					if (dirty & /*isModalOpen*/ 2) {
+    						transition_in(if_block, 1);
+    					}
+    				} else {
+    					if_block = create_if_block$1(ctx);
+    					if_block.c();
+    					transition_in(if_block, 1);
+    					if_block.m(if_block_anchor.parentNode, if_block_anchor);
+    				}
+    			} else if (if_block) {
+    				group_outros();
+
+    				transition_out(if_block, 1, 1, () => {
+    					if_block = null;
+    				});
+
+    				check_outros();
     			}
     		},
     		i: function intro(local) {
     			if (current) return;
     			transition_in(info.block);
+    			transition_in(if_block);
     			current = true;
     		},
     		o: function outro(local) {
@@ -1580,6 +1990,7 @@ var app = (function () {
     				transition_out(block);
     			}
 
+    			transition_out(if_block);
     			current = false;
     		},
     		d: function destroy(detaching) {
@@ -1587,6 +1998,9 @@ var app = (function () {
     			info.block.d();
     			info.token = null;
     			info = null;
+    			if (detaching) detach_dev(t8);
+    			if (if_block) if_block.d(detaching);
+    			if (detaching) detach_dev(if_block_anchor);
     			mounted = false;
     			dispose();
     		}
@@ -1594,7 +2008,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$1.name,
+    		id: create_fragment$2.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1609,26 +2023,28 @@ var app = (function () {
     	return quiz;
     }
 
-    function instance$1($$self, $$props, $$invalidate) {
-    	let quiz = getQuiz();
+    function instance$2($$self, $$props, $$invalidate) {
     	let activeQuestion = 0;
+    	let isModalOpen = false;
+    	let quiz = getQuiz();
     	let score = 0;
 
     	function handleClick() {
-    		$$invalidate(0, quiz = getQuiz());
+    		$$invalidate(2, quiz = getQuiz());
     	}
 
     	function nextQuestion() {
-    		$$invalidate(1, ++activeQuestion);
+    		$$invalidate(0, ++activeQuestion);
     	}
 
     	const resetQuiz = () => {
-    		$$invalidate(2, score = 0);
-    		$$invalidate(0, quiz = getQuiz());
+    		$$invalidate(1, isModalOpen = false);
+    		$$invalidate(3, score = 0);
+    		$$invalidate(2, quiz = getQuiz());
     	};
 
     	const addToScore = () => {
-    		$$invalidate(2, ++score);
+    		$$invalidate(3, ++score);
     	};
 
     	const writable_props = [];
@@ -1639,12 +2055,15 @@ var app = (function () {
 
     	let { $$slots = {}, $$scope } = $$props;
     	validate_slots("Quiz", $$slots, []);
+    	const click_handler = () => resetQuiz();
 
     	$$self.$capture_state = () => ({
     		fly,
     		Question,
-    		quiz,
+    		Modal,
     		activeQuestion,
+    		isModalOpen,
+    		quiz,
     		score,
     		getQuiz,
     		handleClick,
@@ -1655,10 +2074,11 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("quiz" in $$props) $$invalidate(0, quiz = $$props.quiz);
-    		if ("activeQuestion" in $$props) $$invalidate(1, activeQuestion = $$props.activeQuestion);
-    		if ("score" in $$props) $$invalidate(2, score = $$props.score);
-    		if ("questionNumber" in $$props) $$invalidate(3, questionNumber = $$props.questionNumber);
+    		if ("activeQuestion" in $$props) $$invalidate(0, activeQuestion = $$props.activeQuestion);
+    		if ("isModalOpen" in $$props) $$invalidate(1, isModalOpen = $$props.isModalOpen);
+    		if ("quiz" in $$props) $$invalidate(2, quiz = $$props.quiz);
+    		if ("score" in $$props) $$invalidate(3, score = $$props.score);
+    		if ("questionNumber" in $$props) $$invalidate(4, questionNumber = $$props.questionNumber);
     	};
 
     	let questionNumber;
@@ -1668,47 +2088,48 @@ var app = (function () {
     	}
 
     	$$self.$$.update = () => {
-    		if ($$self.$$.dirty & /*score*/ 4) {
+    		if ($$self.$$.dirty & /*score*/ 8) {
     			 if (score > 7) {
-    				alert("You won!");
-    				resetQuiz();
+    				$$invalidate(1, isModalOpen = true);
     			}
     		}
 
-    		if ($$self.$$.dirty & /*activeQuestion*/ 2) {
-    			 $$invalidate(3, questionNumber = activeQuestion + 1);
+    		if ($$self.$$.dirty & /*activeQuestion*/ 1) {
+    			 $$invalidate(4, questionNumber = activeQuestion + 1);
     		}
     	};
 
     	return [
-    		quiz,
     		activeQuestion,
+    		isModalOpen,
+    		quiz,
     		score,
     		questionNumber,
     		nextQuestion,
     		resetQuiz,
-    		addToScore
+    		addToScore,
+    		click_handler
     	];
     }
 
     class Quiz extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$1, create_fragment$1, safe_not_equal, {});
+    		init(this, options, instance$2, create_fragment$2, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "Quiz",
     			options,
-    			id: create_fragment$1.name
+    			id: create_fragment$2.name
     		});
     	}
     }
 
     /* src/App.svelte generated by Svelte v3.24.1 */
-    const file$2 = "src/App.svelte";
+    const file$3 = "src/App.svelte";
 
-    function create_fragment$2(ctx) {
+    function create_fragment$3(ctx) {
     	let h1;
     	let t1;
     	let quiz;
@@ -1721,7 +2142,7 @@ var app = (function () {
     			h1.textContent = "Quiz Application";
     			t1 = space();
     			create_component(quiz.$$.fragment);
-    			add_location(h1, file$2, 10, 0, 112);
+    			add_location(h1, file$3, 10, 0, 112);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1751,7 +2172,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$2.name,
+    		id: create_fragment$3.name,
     		type: "component",
     		source: "",
     		ctx
@@ -1760,7 +2181,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$2($$self, $$props, $$invalidate) {
+    function instance$3($$self, $$props, $$invalidate) {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -1776,13 +2197,13 @@ var app = (function () {
     class App extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$2, create_fragment$2, safe_not_equal, {});
+    		init(this, options, instance$3, create_fragment$3, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
     			tagName: "App",
     			options,
-    			id: create_fragment$2.name
+    			id: create_fragment$3.name
     		});
     	}
     }
